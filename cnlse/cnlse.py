@@ -5,14 +5,11 @@ import tqdm
 
 from gnlse import GNLSESetup, Solution
 from gnlse.common import c
-from gnlse.import_export import write_mat, read_mat
-import matplotlib.pyplot as plt
-import matplotlib
 
 
 class CNLSE:
     """
-    Model propagation of an optical impulse in a fiber by integrating
+    Model propagation of an optical pulse in a fiber by integrating
     the two coupled generalized non-linear Schrödinger equations.
 
     Attributes
@@ -32,8 +29,8 @@ class CNLSE:
             raise ValueError("'wavelength' not set")
         if setup.fiber_length is None:
             raise ValueError("'fiber_length' not set")
-        if setup.impulse_model is None:
-            raise ValueError("'impulse_model' not set")
+        if setup.pulse_model is None:
+            raise ValueError("'pulse_model' not set")
 
         # simulation parameters
         self.fiber_length = setup.fiber_length
@@ -42,6 +39,7 @@ class CNLSE:
         self.atol = setup.atol
         self.method = setup.method
         self.N = setup.resolution
+        self.report = False
 
         # Time domain grid
         self.t = np.linspace(-setup.time_window / 2,
@@ -68,11 +66,11 @@ class CNLSE:
         self.h3W = self.N * ifft(
             fftshift(h3T))
 
-        # Input impulse
-        if hasattr(setup.impulse_model, 'A'):
-            self.A = setup.impulse_model.A(self.t)
+        # Input pulse
+        if hasattr(setup.pulse_model, 'A'):
+            self.A = setup.pulse_model.A(self.t)
         else:
-            self.A = setup.impulse_model
+            self.A = setup.pulse_model
 
         # Dispersion operator
         self.D, self.deltaB = setup.dispersion_model.D(self.V)
@@ -94,7 +92,7 @@ class CNLSE:
             Simulation results in the form of a ``Solution`` object.
         """
         if self.A.size != self.N * 2:
-            raise ValueError("'impulse_model' has not enougth values")
+            raise ValueError("'pulse_model' has not enougth values")
 
         if self.D.size != self.N * 2:
             raise ValueError("'dispersion' has not enougth values")
@@ -104,10 +102,17 @@ class CNLSE:
         dt = self.t[1] - self.t[0]
         Z = np.linspace(0, self.fiber_length, self.z_saves)
 
+        if self.report:
+            progress_bar = tqdm.tqdm(total=self.fiber_length, unit='m')
+
         def rhs(z, AW):
             """
             The right hand side of the differential equation to integrate.
             """
+            if self.report:
+                progress_bar.n = round(z, 3)
+                progress_bar.update(0)
+
             CxW = AW[:self.N]
             CyW = AW[self.N:]
             Atx = fft(CxW * np.exp(self.Dx * z))
@@ -122,25 +127,24 @@ class CNLSE:
 
             Mx = ifft((1 - self.fr) * ((ITx + 2 / 3 * ITy)
                     * Atx + 1 / 3 * Aty**2 * np.conj(Atx) * exp_m2i_deltaB_z)
-            + self.fr * dt * (
-            Atx * (
-                fft(self.h1W * ifft(ITx)) +
-                fft(self.h2W * ifft(ITy))
-            ) + 
-            Aty * (
-                fft(self.h3W * ifft(
-                    Atx * np.conj(Aty
-                    ) * exp_p1i_deltaB_z + Aty * np.conj(Atx) * exp_m1i_deltaB_z)
-                )
-            ) * exp_m1i_deltaB_z))
-                
+                    + self.fr * dt * (Atx * (fft(self.h1W * ifft(ITx)) +
+                    fft(self.h2W * ifft(ITy))
+                    ) + Aty * (fft(self.h3W * ifft(
+                    Atx * np.conj(Aty) * exp_p1i_deltaB_z
+                    + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
+                    ) * exp_m1i_deltaB_z))
+
             My = ifft((1 - self.fr)
-                    * (ITy * Aty + 2 / 3 * ITx * Aty + 1 / 3 * Atx**2 * np.conj(Aty) * exp_p2i_deltaB_z)
-            + self.fr * dt * (
-                Aty * (
+                    * (ITy * Aty + 2 / 3 * ITx * Aty
+                    + 1 / 3 * Atx**2 * np.conj(Aty) * exp_p2i_deltaB_z)
+                    + self.fr * dt * (
+                        Aty * (
                     fft(self.h1W * ifft(ITy)) + fft(self.h2W * ifft(ITx))
                 ) + Atx * (
-                    fft(self.h3W * ifft(Atx * np.conj(Aty) * exp_p1i_deltaB_z + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
+                    fft(
+                        self.h3W * ifft(
+                            Atx * np.conj(Aty) * exp_p1i_deltaB_z
+                            + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
                 ) * exp_p1i_deltaB_z))
 
             rx = 1j * self.gammax * self.W * Mx * np.exp(-self.Dx * z)
@@ -161,6 +165,9 @@ class CNLSE:
             atol=self.atol,
             method=self.method,
             dense_output=True)
+
+        if self.report:
+            progress_bar.close()
 
         AWx = solution.y.T[:, :self.N]
         AWy = solution.y.T[:, self.N:]

@@ -36,6 +36,11 @@ class DubbleDispersionFiberFromOPD(Dispersion):
             self.maxloss = maxloss
             self.lambda_loss = None
             self.fiber_loss = None
+        elif loss == 0:
+            self.doping = None
+            self.maxloss = None
+            self.lambda_loss = None
+            self.fiber_loss = 0.
         else:
             self.doping = None
             self.maxloss = None
@@ -78,7 +83,13 @@ class DubbleDispersionFiberFromOPD(Dispersion):
         deltaB = self.deltaN * self.w0 / c * 1e9
 
         # Damping
-        if self.fiber_loss is not None:
+        if self.fiber_loss is None:
+            self.calc_loss(2 * np.pi * c / (V + self.w0) / 1e3)
+        elif (
+            isinstance(self.fiber_loss, int) or isinstance(self.fiber_loss, float)
+            ) and self.fiber_loss == 0:
+            self.alpha = 0
+        else:
             WL = 2 * np.pi * c / (V + self.w0)  # nm
             # Extrapolate loss for a lambda vector
             loss_interp = interpolate.interp1d(self.lambda_loss,
@@ -88,41 +99,39 @@ class DubbleDispersionFiberFromOPD(Dispersion):
             loss = loss_interp(WL)
             loss[WL > self.lambda_loss[-1]] = np.max(self.fiber_loss)
             self.alpha = loss / (10 / np.log(10))
-        else:
-            self.calc_loss(2 * np.pi * c / (V + self.w0) / 1e3)
 
         # Linear dispersion operator
         Lx = 1j * Bx - self.alpha / 2
         Ly = 1j * By - self.alpha / 2
 
         return np.concatenate((Lx, Ly)), deltaB
-    
+
     def calc_loss(self, lambdas):
 
         R = .74 + (2.33 - .74) * self.doping
-        alphaR= (R * (lambdas)**-4) * 1e-3
+        alphaR = R * lambdas**(-4) * 1e-3
 
         alphaoh_1_38 = 2.43
-        
+
         sigma_lambda = 0.030
-        alphaoh = 0.00012/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.444)/(sigma_lambda))**2) + \
-                  0.00050/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.506)/(sigma_lambda))**2) + \
-                  0.00030/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.566)/(sigma_lambda))**2) + \
-                  0.00640/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.593)/(sigma_lambda))**2) + \
-                  0.00028/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.651)/(sigma_lambda))**2) + \
-                  0.00440/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.685)/(sigma_lambda))**2) + \
-                  0.07800/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.724)/(sigma_lambda))**2) + \
-                  0.00380/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.825)/(sigma_lambda))**2) + \
-                  0.08000/62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.878)/(sigma_lambda))**2) + \
-                  1.6/    62.7*alphaoh_1_38*np.exp(-.5*((lambdas-0.943)/(sigma_lambda))**2) + \
-                  0.07/   62.7*alphaoh_1_38*np.exp(-.5*((lambdas-1.139)/(sigma_lambda))**2) + \
-                  2.7/    62.7*alphaoh_1_38*np.exp(-.5*((lambdas-1.246)/(sigma_lambda))**2) + \
-                              alphaoh_1_38*np.exp(-.5*((lambdas-1.383)/(sigma_lambda))**2) + \
-                  0.84/   62.7*alphaoh_1_38*np.exp(-.5*((lambdas-1.894)/(sigma_lambda))**2) + \
-                  201/      62.7*alphaoh_1_38*np.exp(-.5*((lambdas-2.212)/(sigma_lambda))**2) + \
-                  10000/      62.7*alphaoh_1_38*np.exp(-.5*((lambdas-2.722)/(sigma_lambda))**2)
+        alphaoh = 0.00012 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.444) / (sigma_lambda))**2) + \
+                  0.00050 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.506) / (sigma_lambda))**2) + \
+                  0.00030 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.566) / (sigma_lambda))**2) + \
+                  0.00640 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.593) / (sigma_lambda))**2) + \
+                  0.00028 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.651) / (sigma_lambda))**2) + \
+                  0.00440 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.685) / (sigma_lambda))**2) + \
+                  0.07800 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.724) / (sigma_lambda))**2) + \
+                  0.00380 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.825) / (sigma_lambda))**2) + \
+                  0.08000 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.878) / (sigma_lambda))**2) + \
+                  1.6 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.943) / (sigma_lambda))**2) + \
+                  0.07 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 1.139) / (sigma_lambda))**2) + \
+                  2.7 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 1.246) / (sigma_lambda))**2) + \
+                  alphaoh_1_38 * np.exp(-.5 * ((lambdas - 1.383) / (sigma_lambda))**2) + \
+                  0.84 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 1.894) / (sigma_lambda))**2) + \
+                  201 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 2.212) / (sigma_lambda))**2) + \
+                  10000 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 2.722) / (sigma_lambda))**2)
 
         alphaIR = 4.2e8 * np.exp(-47.5 / lambdas)
         a = (alphaoh + alphaR + alphaIR) / (10 / np.log(10))
-        a[a>maxloss] = self.maxloss
+        a[a > self.maxloss] = self.maxloss
         self.alpha = a

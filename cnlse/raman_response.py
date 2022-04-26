@@ -6,7 +6,7 @@ import numpy as np
 
 
 def raman_polarisation(T):
-    """Raman scattering function for silica optical fibers, based on 
+    """Raman scattering function for silica optical fibers, based on
     ....
 
     Parameters

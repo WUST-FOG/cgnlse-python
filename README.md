@@ -11,7 +11,7 @@ projects developed by [Fiber Optics Group, WUST](http://www.fog.pwr.edu.pl/).
 1. Create a virtual environment with `python -m venv cnlse` or using `conda` by `conda create -n cnlse python=3.8`.
 2. Activate it with `. cnlse/bin/activate` or `conda activate cnlse`.
 3. Install `gnlse-python` package `pip install git+https://github.com/WUST-FOG/gnlse-python.git`
-3. Clone this repository `git clone https://github.com/WUST-FOG/vnlse-python.git`
+3. Clone this repository `git clone https://github.com/WUST-FOG/cnlse-python.git`
 
 ```bash
 python -m venv cnlse

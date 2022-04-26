@@ -1,14 +1,7 @@
 import os
-import numpy as np
-from scipy.fftpack import fft, ifft, fftshift
-from scipy import interpolate
-
 import matplotlib.pyplot as plt
 import matplotlib
-matplotlib.rc('font', size=15)
-matplotlib.rc('axes', titlesize=18)
-plt.rc('legend', fontsize=15) 
-
+import numpy as np
 import tqdm
 
 import gnlse
@@ -16,6 +9,11 @@ from gnlse.common import c
 
 from cnlse import (CNLSE, DubbleDispersionFiberFromOPD,
                    DoubleSechEnvelope, raman_polarisation)
+
+matplotlib.rc('font', size=15)
+matplotlib.rc('axes', titlesize=18)
+plt.rc('legend', fontsize=15)
+
 
 if __name__ == '__main__':
     setup = gnlse.GNLSESetup()
@@ -36,8 +34,7 @@ if __name__ == '__main__':
     setup.raman_model = raman_polarisation
 
     # Input pulse parameters for both modes
-    power = 1  # W
-    FWHM = 0.023 # ps
+    FWHM = 0.023  # ps
     average_power = 0.041  # W
     repetition_rate = 80e6  # Hz
     input_energy = average_power / repetition_rate * 1e9  # nJ
@@ -97,7 +94,7 @@ if __name__ == '__main__':
     mat_path = os.path.join(os.path.dirname(__file__),
                             'data', 'loss_fited.mat')
     mat = gnlse.read_mat(mat_path)
-    fiber_loss = mat['a'][0] #  dB/m
+    fiber_loss = mat['a'][0]  # dB/m
     lambdas_loss = mat['l'][0] * 1e3  # nm
 
     setup.dispersion_model = DubbleDispersionFiberFromOPD(
@@ -106,7 +103,7 @@ if __name__ == '__main__':
 
     # Nonlinear Simulation
     ###########################################################################
-    
+
     theta_list = [1, 89]
     count = len(theta_list)
 
@@ -114,14 +111,14 @@ if __name__ == '__main__':
 
     for i, th in enumerate(theta_list):
         theta = th / 180 * np.pi  # rad
-        setup.impulse_model = DoubleSechEnvelope(
+        setup.pulse_model = DoubleSechEnvelope(
             input_energy, FWHM, theta, w0)
 
         solver = CNLSE(setup)
         solution = solver.run()
 
         # prepare initial vectors
-        Z   = solution.Z
+        Z = solution.Z
         Atx = solution.At[:setup.z_saves, :]
         Aty = solution.At[setup.z_saves:, :]
         AWx = solution.AW[:setup.z_saves, :]
@@ -130,27 +127,28 @@ if __name__ == '__main__':
         # filter noise & simulate futher distance
         if total_fiber_length > setup.fiber_length:
             lITx = 10 * np.log10(np.abs(Atx[-1, :]) ** 2,
-                                where = (np.abs(Atx[-1, :]) ** 2 > 0))
+                                 where=(np.abs(Atx[-1, :]) ** 2 > 0))
             lITy = 10 * np.log10(np.abs(Aty[-1, :]) ** 2,
-                                where = (np.abs(Aty[-1, :]) ** 2 > 0))
+                                 where=(np.abs(Aty[-1, :]) ** 2 > 0))
             lIT = lITx + lITy
             time_filter = solution.t[np.argmax(lIT)]
             iis = np.logical_or(
-                solution.t < (time_filter - .5), solution.t > (time_filter + .5))
+                solution.t < (time_filter - .5),
+                solution.t > (time_filter + .5))
             Atx[-1, iis] = 0
             Aty[-1, iis] = 0
 
             # simulate futher distance
             for j in tqdm.tqdm(range(2, total_fiber_length + 1)):
-                setup.impulse_model = np.concatenate(
+                setup.pulse_model = np.concatenate(
                     (Atx[-1, :], Aty[-1, :]))
                 solver = CNLSE(setup)
                 solution = solver.run()
                 Z = np.concatenate((Z, solution.Z[1:] + j - 1), axis=None)
-                Atx = np.concatenate((Atx, solution.At[1:setup.z_saves,:]))
-                Aty = np.concatenate((Aty, solution.At[setup.z_saves + 1:,:]))
-                AWx = np.concatenate((AWx, solution.AW[1:setup.z_saves,:]))
-                AWy = np.concatenate((AWy, solution.AW[setup.z_saves + 1:,:]))
+                Atx = np.concatenate((Atx, solution.At[1:setup.z_saves, :]))
+                Aty = np.concatenate((Aty, solution.At[setup.z_saves + 1:, :]))
+                AWx = np.concatenate((AWx, solution.AW[1:setup.z_saves, :]))
+                AWy = np.concatenate((AWy, solution.AW[setup.z_saves + 1:, :]))
 
             # update results
             solution.Z = Z
@@ -174,20 +172,20 @@ if __name__ == '__main__':
             plt.title("(b) Fast axis excitation")
         WL = 2 * np.pi * c / solution.W  # wavelength grid
         plt.plot(WL, 10 * np.log10(np.abs(AWx[99, :])**2,
-                      where=(np.abs(AWx[99, :])**2 > 0)), '--r',
-                      label = "2m")
+                 where=(np.abs(AWx[99, :])**2 > 0)), '--r',
+                 label="2m")
         plt.plot(WL, 10 * np.log10(np.abs(AWx[393, :])**2,
-                      where=(np.abs(AWx[393, :])**2 > 0)), '-.r',
-                      label = "8m")
+                 where=(np.abs(AWx[393, :])**2 > 0)), '-.r',
+                 label="8m")
         plt.plot(WL, 10 * np.log10(np.abs(AWx[981, :])**2,
-                      where=(np.abs(AWx[981, :])**2 > 0)), 'r',
-                      label = "20m")
+                 where=(np.abs(AWx[981, :])**2 > 0)), 'r',
+                 label="20m")
         plt.plot(WL, 10 * np.log10(np.abs(AWy[99, :])**2,
-                      where=(np.abs(AWy[99, :])**2 > 0)), '--g')
+                 where=(np.abs(AWy[99, :])**2 > 0)), '--g')
         plt.plot(WL, 10 * np.log10(np.abs(AWy[393, :])**2,
-                      where=(np.abs(AWy[393, :])**2 > 0)), '-.g')
+                 where=(np.abs(AWy[393, :])**2 > 0)), '-.g')
         plt.plot(WL, 10 * np.log10(np.abs(AWy[981, :])**2,
-                      where=(np.abs(AWy[981, :])**2 > 0)), 'g')
+                 where=(np.abs(AWy[981, :])**2 > 0)), 'g')
 
         if i == 1:
             plt.legend(fancybox=True, shadow=True)
