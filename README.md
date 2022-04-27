@@ -4,7 +4,9 @@
 
 ![soliton_traping](./data/191119_polarisation_21m_lambda_1560nm_power_41mW.png)
 
-## Installation
+## Usage
+
+### Installation
 
 1. Create a virtual environment with `python -m venv cgnlse` or using `conda` by `conda create -n cgnlse python=3.8`.
 2. Activate it with `. cgnlse/bin/activate` or `conda activate cgnlse`.
@@ -19,11 +21,17 @@ git clone https://github.com/WUST-FOG/cgnlse-python.git
 cd cgnlse-python
 ```
 
+### Example
+
 Run test script to generate above figure and reproduce the manuscript results:
 
 ```bash
-python run_soliton_traping.py
+python draw_soliton_traping.py
 ```
+
+Note that we also provided script tu run simulations (`run_soliton_traping.py`),
+however used input data is not publicly available at this time,
+but may be obtained from the authors upon reasonable request.
 
 ## Acknowledgement
 
