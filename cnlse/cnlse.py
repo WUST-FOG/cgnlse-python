@@ -58,13 +58,15 @@ class CNLSE:
         self.W = fftshift(self.Omega)
 
         # Raman scattering
-        self.fr, h1T, h2T, h3T = setup.raman_model(self.t)
-        self.h1W = self.N * ifft(
-            fftshift(h1T))
-        self.h2W = self.N * ifft(
-            fftshift(h2T))
-        self.h3W = self.N * ifft(
-            fftshift(h3T))
+        self.h1W = None
+        if setup.raman_model:
+            self.fr, h1T, h2T, h3T = setup.raman_model(self.t)
+            self.h1W = self.N * ifft(
+                fftshift(h1T))
+            self.h2W = self.N * ifft(
+                fftshift(h2T))
+            self.h3W = self.N * ifft(
+                fftshift(h3T))
 
         # Input pulse
         if hasattr(setup.pulse_model, 'A'):
@@ -76,11 +78,18 @@ class CNLSE:
         self.D, self.deltaB = setup.dispersion_model.D(self.V)
 
         # Nonlinearity
-        gamma, scale = setup.nonlinearity[0].gamma(self.V)
-        self.gammax = fftshift(gamma / w_0)
-        self.scale = fftshift(scale)
-        gamma, _ = setup.nonlinearity[1].gamma(self.V)
-        self.gammay = fftshift(gamma / w_0)
+        if hasattr(setup.nonlinearity[0], 'gamma'):
+            # in case in of frequency dependent nonlinearity
+            gamma, scale = setup.nonlinearity[0].gamma(self.V)
+            self.gammax = fftshift(gamma / w_0)
+            self.scale = fftshift(scale)
+            gamma, _ = setup.nonlinearity[1].gamma(self.V)
+            self.gammay = fftshift(gamma / w_0)
+        else:
+            # in case in of direct introduced value
+            self.gammax = setup.nonlinearity[0] / w_0
+            self.gammay = setup.nonlinearity[1] / w_0
+            self.scale = 1
 
     def run(self):
         """
@@ -120,32 +129,36 @@ class CNLSE:
             ITx = np.abs(Atx)**2
             ITy = np.abs(Aty)**2
 
-            exp_m2i_deltaB_z = np.exp(-2j * self.deltaB * z)
-            exp_m1i_deltaB_z = np.exp(-1j * self.deltaB * z)
-            exp_p1i_deltaB_z = np.exp(+1j * self.deltaB * z)
-            exp_p2i_deltaB_z = np.exp(+2j * self.deltaB * z)
+            if self.h1W is not None:
+                exp_m2i_deltaB_z = np.exp(-2j * self.deltaB * z)
+                exp_m1i_deltaB_z = np.exp(-1j * self.deltaB * z)
+                exp_p1i_deltaB_z = np.exp(+1j * self.deltaB * z)
+                exp_p2i_deltaB_z = np.exp(+2j * self.deltaB * z)
 
-            Mx = ifft((1 - self.fr) * ((ITx + 2 / 3 * ITy)
-                    * Atx + 1 / 3 * Aty**2 * np.conj(Atx) * exp_m2i_deltaB_z)
-                    + self.fr * dt * (Atx * (fft(self.h1W * ifft(ITx)) +
-                    fft(self.h2W * ifft(ITy))
-                    ) + Aty * (fft(self.h3W * ifft(
-                    Atx * np.conj(Aty) * exp_p1i_deltaB_z
-                    + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
-                    ) * exp_m1i_deltaB_z))
+                Mx = ifft((1 - self.fr) * ((ITx + 2 / 3 * ITy)
+                        * Atx + 1 / 3 * Aty**2 * np.conj(Atx) * exp_m2i_deltaB_z)
+                        + self.fr * dt * (Atx * (fft(self.h1W * ifft(ITx)) +
+                        fft(self.h2W * ifft(ITy))
+                        ) + Aty * (fft(self.h3W * ifft(
+                        Atx * np.conj(Aty) * exp_p1i_deltaB_z
+                        + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
+                        ) * exp_m1i_deltaB_z))
 
-            My = ifft((1 - self.fr)
-                    * (ITy * Aty + 2 / 3 * ITx * Aty
-                    + 1 / 3 * Atx**2 * np.conj(Aty) * exp_p2i_deltaB_z)
-                    + self.fr * dt * (
-                        Aty * (
-                    fft(self.h1W * ifft(ITy)) + fft(self.h2W * ifft(ITx))
-                ) + Atx * (
-                    fft(
-                        self.h3W * ifft(
-                            Atx * np.conj(Aty) * exp_p1i_deltaB_z
-                            + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
-                ) * exp_p1i_deltaB_z))
+                My = ifft((1 - self.fr)
+                        * (ITy * Aty + 2 / 3 * ITx * Aty
+                        + 1 / 3 * Atx**2 * np.conj(Aty) * exp_p2i_deltaB_z)
+                        + self.fr * dt * (
+                            Aty * (
+                        fft(self.h1W * ifft(ITy)) + fft(self.h2W * ifft(ITx))
+                    ) + Atx * (
+                        fft(
+                            self.h3W * ifft(
+                                Atx * np.conj(Aty) * exp_p1i_deltaB_z
+                                + Aty * np.conj(Atx) * exp_m1i_deltaB_z))
+                    ) * exp_p1i_deltaB_z))
+            else:
+                Mx = ifft(Atx * (ITx + 2/3 * ITy))
+                My = ifft(Aty * (ITy + 2/3 * ITx))
 
             rx = 1j * self.gammax * self.W * Mx * np.exp(-self.Dx * z)
             ry = 1j * self.gammay * self.W * My * np.exp(-self.Dy * z)

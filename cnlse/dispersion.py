@@ -12,11 +12,74 @@ from gnlse.common import c
 from gnlse.dispersion import Dispersion
 
 
-class DubbleDispersionFiberFromOPD(Dispersion):
+class DubbleDispersionFiberFromTaylor(Dispersion):
     """Calculates the dispersion in frequency domain
+       using second Beta derivative
 
     Attributes
      ----------
+    loss : float
+        Loss factor [dB/m]
+    betas : ndarray (2, 1)
+        Derivatives of constant propagations at pump wavelength
+        [ps^n/km]
+    deltaN : float
+        Difference between the effective indices seen by
+        the x- and y-polarized modes
+    deltaB1 : float
+        Difference between first derivatives of constant propagations
+        at pump wavelength [ps/m]
+    w0 : float
+        Central frequency of the input pulse [THz]
+    """
+
+    def __init__(self, loss, betas, deltaN, deltaB1, w0):
+        self.loss = loss
+        self.betas = betas
+        self.deltaB = deltaN * w0 / c * 1e9
+        self.deltaB1 = deltaB1
+
+    def D(self, V):
+        # Damping
+        self.calc_loss()
+        # Taylor series for subsequent derivatives
+        # of constant propagation
+        Lx = -1j * self.deltaB1/2 * V + 1j * self.betas[0, 0] / 2 * V**2 - self.alpha / 2
+        Ly = 1j * self.deltaB1/2 * V + 1j * self.betas[1, 0] / 2 * V**2 - self.alpha / 2
+        return np.concatenate((Lx, Ly)), self.deltaB
+
+
+class DubbleDispersionFiberFromOPD(Dispersion):
+    """Calculates the dispersion in frequency domain
+       using measured optical path delay (OPD)
+
+    Attributes
+    ----------
+    lambdasOPD1 : ndarray
+        Wavelength grid for measured optical path delay (OPD)
+        for x-polarized mode [um]
+    lambdasOPD2 : ndarray
+        Wavelength grid for measured optical path delay (OPD)
+        for y-polarized mode [um]
+    deltaOPD1 : ndarray
+        Measured optical path delay (OPD)
+        for x-polarized mode [mm]
+    deltaOPD2 : ndarray
+        Measured optical path delay (OPD)
+        for y-polarized mode [mm]
+    L : float
+        Measured length [m]
+    deltaN : float
+        Difference between the effective indices seen by
+        the x- and y-polarized modes
+    w0 : float
+        Central frequency of the input pulse [THz]
+    loss : tuple, None, int
+        (Wavelengths [um], Loss factor [dB/m])
+    doping : float
+        Germanium doping level
+    maxloss : float
+        Value of loss to extrapolate above measured range [1/m]
     """
 
     def __init__(self, lambdasOPD1,
@@ -29,8 +92,8 @@ class DubbleDispersionFiberFromOPD(Dispersion):
         self.deltaOPD1 = deltaOPD1
         self.deltaOPD2 = deltaOPD2
         self.L = L
-        self.deltaN = deltaN
         self.w0 = w0
+        self.deltaB = deltaN * self.w0 / c * 1e9
         if loss is None:
             self.doping = doping
             self.maxloss = maxloss
@@ -80,8 +143,6 @@ class DubbleDispersionFiberFromOPD(Dispersion):
         Bx = beta01 - (p1w01 + p1w02) / 2 * V
         By = beta02 - (p1w01 + p1w02) / 2 * V
 
-        deltaB = self.deltaN * self.w0 / c * 1e9
-
         # Damping
         if self.fiber_loss is None:
             self.calc_loss(2 * np.pi * c / (V + self.w0) / 1e3)
@@ -104,16 +165,25 @@ class DubbleDispersionFiberFromOPD(Dispersion):
         Lx = 1j * Bx - self.alpha / 2
         Ly = 1j * By - self.alpha / 2
 
-        return np.concatenate((Lx, Ly)), deltaB
+        return np.concatenate((Lx, Ly)), self.deltaB
 
     def calc_loss(self, lambdas):
+        """Calculates the total loss in [1/m]
 
+        Attributes
+        ----------
+        lambdas : ndarray
+            Wavelength grid for loss calculation
+        """
+        # Rayleigh scattering [dB/km*um^4]
+        # value 0.74 for SiO2 from Appl. Phys. Lett. 83, 5175 (2003)
+        # value 2.33 for GeO2 from Appl. Optics 36(27) (1997)
         R = .74 + (2.33 - .74) * self.doping
         alphaR = R * lambdas**(-4) * 1e-3
-
+        # measured fiber water peak
         alphaoh_1_38 = 2.43
-
         sigma_lambda = 0.030
+        # Journal of Non-Crystalline Solids Volume 203 (1996)
         alphaoh = 0.00012 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.444) / (sigma_lambda))**2) + \
                   0.00050 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.506) / (sigma_lambda))**2) + \
                   0.00030 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 0.566) / (sigma_lambda))**2) + \
@@ -130,7 +200,7 @@ class DubbleDispersionFiberFromOPD(Dispersion):
                   0.84 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 1.894) / (sigma_lambda))**2) + \
                   201 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 2.212) / (sigma_lambda))**2) + \
                   10000 / 62.7 * alphaoh_1_38 * np.exp(-.5 * ((lambdas - 2.722) / (sigma_lambda))**2)
-
+        # Hiroshi Murata, Handbook of optical fibers and cables (1996)
         alphaIR = 4.2e8 * np.exp(-47.5 / lambdas)
         a = (alphaoh + alphaR + alphaIR) / (10 / np.log(10))
         a[a > self.maxloss] = self.maxloss

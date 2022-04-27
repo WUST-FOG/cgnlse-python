@@ -1,5 +1,5 @@
-"""Calculates Raman responses
-
+"""
+Calculates Raman responses
 """
 
 import numpy as np
@@ -7,7 +7,10 @@ import numpy as np
 
 def raman_polarisation(T):
     """Raman scattering function for silica optical fibers, based on
-    ....
+    Prannay Balla and Govind P. Agrawal
+    Phys. Rev. A 98, 023822 (2018)
+    (J. Opt. Soc. Am. B 6, 1159–1166 (1989),
+    J. Opt. Soc. Am. B 9, 1061–1082 (1992))
 
     Parameters
      ----------
@@ -41,7 +44,7 @@ def raman_polarisation(T):
         T / tau1)
     # Izotropic Raman respons
     hb = (2 * taub - T) / (taub**2) * np.exp(-T / taub)
-    # ... Raman response
+
     h1T = (fa + fc) * ha + fb * hb
     h2T = fa * ha
     h3T = (fc * ha + fb * hb) / 2

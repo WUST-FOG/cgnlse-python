@@ -1,3 +1,14 @@
+"""
+Example of trapped pulse generation in birefringent
+microstructured optical fiber in
+anomalous dispersion regime [1].
+
+[1] Stefanska, K., Majchrowska, S., Gemza, K., Sobon, G.,
+    Sotor, J., Mergo, P., Tarnowski, K. L., Martynkien, T.
+    Soliton trapping and orthogonal Raman scattering in
+    a birefringent microstructured fiber.
+"""
+
 import os
 import numpy as np
 import tqdm

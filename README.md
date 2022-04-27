@@ -1,6 +1,6 @@
 ![Visits Badge](https://badges.pufler.dev/visits/WUST-FOG/cgnlse-python)
 
-# Soliton trapping and orthogonal Raman scattering in a birefringent microstructured fiber
+# Soliton trapping and modulation instability in a birefringent microstructured fiber
 
 ![soliton_traping](./data/191119_polarisation_21m_lambda_1560nm_power_41mW.png)
 
@@ -21,7 +21,9 @@ git clone https://github.com/WUST-FOG/cgnlse-python.git
 cd cgnlse-python
 ```
 
-### Example
+### Examples
+
+**Soliton trapping and orthogonal Raman scattering**
 
 Run test script to generate above figure and reproduce the manuscript results:
 
@@ -32,6 +34,19 @@ python draw_soliton_traping.py
 Note that we also provided script tu run simulations (`run_soliton_traping.py`),
 however used input data is not publicly available at this time,
 but may be obtained from the authors upon reasonable request.
+
+**Modulation instability in highly birefringent fibers**
+
+To run example of vector modulation instability in highly birefringent
+fibers with circularly polarized modes in the normal dispersion regime
+type:
+
+```bash
+python run_modulation_instability.py
+```
+
+Note that using also raman_polarisation and setting solver.fr to 0
+one can simulate the case of low-birefringent fibers.
 
 ## Acknowledgement
 

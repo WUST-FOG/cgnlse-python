@@ -18,9 +18,13 @@ class DoubleSechEnvelope(Envelope):
     Attributes
     ----------
     input_energy : float
-        Input pulse energy, [nJ].
+        Input pulse energy [nJ]
     FWHM : float
-        Pulse duration Full-Width Half-Maximum.
+        Pulse duration Full-Width Half-Maximum [ps]
+    theta : float
+        Azimuth angle [rad]
+    w0 : float
+        Central frequency of the input pulse [THz]
     """
 
     def __init__(self, input_energy, FWHM, theta, w0):
