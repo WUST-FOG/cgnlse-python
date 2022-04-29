@@ -32,7 +32,6 @@ if __name__ == '__main__':
     Aeff0 = 54e-12  # 1/m^2
     gamma = n2 * 2 * np.pi / setup.wavelength * 1e9 / Aeff0  # 1/W/m
     setup.nonlinearity = (gamma, gamma)
-    setup.self_steepening = True
 
     # The dispersion model is built from a Taylor expansion
     # with coefficients given below.
@@ -43,9 +42,8 @@ if __name__ == '__main__':
     G = 5e-4
     Dbeta1 = G / (gnlse.common.c / 1e9)  # ps/m
     dn = 1e-4
-    Dbeta = dn * 2 * np.pi / setup.wavelength * 1e9  # 1/m
     setup.dispersion_model = DubbleDispersionFiberFromTaylor(
-        loss, betas, Dbeta, Dbeta1, w0)
+        loss, betas, dn, Dbeta1, w0)
 
     # Input pulse parameters
     peak_power = 2000  # W
@@ -61,6 +59,7 @@ if __name__ == '__main__':
     # Nonlinear Simulation
     ###########################################################################
     solver = CNLSE(setup)
+    solver.report = True
     solution = solver.run()
 
     # Visualization

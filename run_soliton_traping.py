@@ -75,7 +75,7 @@ if __name__ == '__main__':
                                                      neff_max=10)
     fun_gammay = gnlse.NonlinearityFromEffectiveArea(neffy,
                                                      Aeffx,
-                                                     lambdasy,
+                                                     lambdasx,
                                                      setup.wavelength,
                                                      n2,
                                                      neff_max=10)
