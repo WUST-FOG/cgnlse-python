@@ -21,8 +21,12 @@ def raman_polarisation(T):
     -------
     fr : float
        Share of Raman response.
-    RT : ndarray
-       Vector representing Raman response.
+    h1T : ndarray
+       Vector representing h1 temporal Raman response.
+    h2T : ndarray
+       Vector representing h2 temporal Raman response.
+    h3T : ndarray
+       Vector representing h3 temporal Raman response.
 
     """
 
