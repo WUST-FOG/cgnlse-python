@@ -1,4 +1,4 @@
-![Visits Badge](https://badges.pufler.dev/visits/WUST-FOG/cgnlse-python)
+![Visits Badge](https://badges.pufler.dev/visits/WUST-FOG/cgnlse-python)[![DOI](https://zenodo.org/badge/477591470.svg)](https://zenodo.org/badge/latestdoi/477591470)
 
 # Nonlinear phenomena in birefringent microstructured fibers
 
