@@ -65,7 +65,7 @@ The python code based on `gnlse` package, available at
 
 ## Citation
 
-If you find this code useful in your research, please consider citing:
+If you find this code useful in your research, please consider [citing](https://arxiv.org/abs/2204.13773v1):
 
 ```
 @misc{stefanska2022soliton_traping,
@@ -74,7 +74,9 @@ If you find this code useful in your research, please consider citing:
       author={Karolina Stefańska and Sylwia Majchrowska and Karolina Gemza and Grzegorz Soboń
               and Jarosław Sotor and Paweł Mergo and Karol Tarnowski and Tadeusz Martynkien},
       year={2022},
-      eprint={submit/4283623},
+      eprint={arXiv:2204.13773},
+      doi = {10.48550/ARXIV.2204.13773},
+      url = {https://arxiv.org/abs/2204.13773},
       archivePrefix={arXiv},
       primaryClass={physics.optics}
 }
