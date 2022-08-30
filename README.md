@@ -64,19 +64,39 @@ The python code based on `gnlse` package, available at
 [https://github.com/WUST-FOG/gnlse-python](https://github.com/WUST-FOG/gnlse-python).
 
 ## Citation
+If you find this code useful in your research, please consider citing:
 
-If you find this code useful in your research, please consider [citing](https://arxiv.org/abs/2204.13773v1):
+[Soliton trapping and orthogonal Raman scattering in a birefringent photonic crystal fiber](https://arxiv.org/abs/2204.13773v1):
 
 ```
-@misc{stefanska2022soliton_traping,
-      title={Soliton trapping and orthogonal Raman scattering in
-             a birefringent microstructured fiber}, 
-      author={Karolina Stefańska and Sylwia Majchrowska and Karolina Gemza and Grzegorz Soboń
-              and Jarosław Sotor and Paweł Mergo and Karol Tarnowski and Tadeusz Martynkien},
-      year={2022},
-      eprint={arXiv:2204.13773},
-      doi = {10.48550/ARXIV.2204.13773},
-      url = {https://arxiv.org/abs/2204.13773},
+@article{Stefanska:22,
+      author = {Karolina Stefa\'{n}ska and Sylwia Majchrowska and Karolina Gemza
+                and Grzegorz Sobo\'{n} and Jaros{\l}aw Sotor and Pawe{\l} Mergo
+                and Karol Tarnowski and Tadeusz Martynkien},
+      journal = {Opt. Lett.},
+      number = {16},
+      pages = {4183--4186},
+      publisher = {Optica Publishing Group},
+      title = {Soliton trapping and orthogonal Raman scattering
+               in a birefringent photonic crystal fiber},
+      volume = {47},
+      month = {Aug},
+      year = {2022},
+      url = {http://opg.optica.org/ol/abstract.cfm?URI=ol-47-16-4183},
+      doi = {10.1364/OL.463643}
+}
+```
+
+[gnlse-python: Open Source Software to Simulate Nonlinear Light Propagation In Optical Fibers](https://arxiv.org/abs/2110.00298):
+
+```
+@misc{redman2021gnlsepython,
+      title={gnlse-python: Open Source Software to Simulate
+             Nonlinear Light Propagation In Optical Fibers}, 
+      author={Pawel Redman and Magdalena Zatorska and Adam Pawlowski
+              and Daniel Szulc and Sylwia Majchrowska and Karol Tarnowski},
+      year={2021},
+      eprint={2110.00298},
       archivePrefix={arXiv},
       primaryClass={physics.optics}
 }
